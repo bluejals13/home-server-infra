@@ -1,0 +1,32 @@
+{{- if .Values.logging.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      containers:
+        - name: loki
+          image: {{ .Values.logging.loki.image }}
+          ports:
+            - containerPort: {{ .Values.logging.loki.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+spec:
+  selector:
+    app: loki
+  ports:
+    - port: {{ .Values.logging.loki.port }}
+      targetPort: {{ .Values.logging.loki.port }}
+{{- end }}
