@@ -1,4 +1,0 @@
-apiVersion: v2
-name: my-platform
-version: 0.1.0
-description: Full platform (nginx + frontend + backend + db + redis)
