@@ -1,40 +1,152 @@
-# 핵심 서비스
+# ========================
+# Service Account
+# ========================
+serviceAccount:
+  create: true
+  name: my-platform-sa
+
+# ========================
+# 전역 Ingress / HTTPRoute 비활성화
+# ========================
+# Helm 템플릿에서 전역 ingress를 참조하지 않도록 nil pointer 방지
+ingress:
+  enabled: true
+httpRoute:
+  enabled: false
+
+# ========================
+# 공통 서비스
+# ========================
+service:
+  type: ClusterIP
+  port: 80
+
+# ========================
+# 오토스케일링
+# ========================
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+# ========================
+# 공통 이미지 기본값
+# ========================
+image:
+  repository: nginx
+  tag: latest
+
+# ========================
+# Nginx 서비스
+# ========================
 nginx:
-  image: nginx:latest
+  image:
+    repository: nginx
+    tag: latest
   replicaCount: 1
-  livenessPath: /
-  readinessPath: /
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: traefik  # ← 여기 추가
+    rules:
+      - host: nginx.myapp.local
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: nginx
+                  port:
+                    number: 80
 
+# ========================
+# Frontend 서비스
+# ========================
 frontend:
-  image: my-frontend:latest
+  image:
+    repository: my-frontend
+    tag: latest
   replicaCount: 1
-  livenessPath: /healthz
-  readinessPath: /ready
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: traefik  # ← 여기 추가
+    rules:
+      - host: frontend.myapp.local
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: frontend
+                  port:
+                    number: 80
 
+# ========================
+# Backend 서비스
+# ========================
 backend:
-  image: my-backend:latest
+  image:
+    repository: my-backend
+    tag: latest
   replicaCount: 1
-  livenessPath: /healthz
-  readinessPath: /ready
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: traefik  # ← 여기 추가
+    rules:
+      - host: backend.myapp.local
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: backend
+                  port:
+                    number: 80
 
+# ========================
+# 내부 서비스
+# ========================
 redis:
-  image: redis:latest
+  image:
+    repository: redis
+    tag: latest
   replicaCount: 1
+  service:
+    type: ClusterIP
 
 db:
-  image: postgres:15
+  image:
+    repository: postgres
+    tag: "15"
   storage: 1Gi
   replicaCount: 1
+  service:
+    type: ClusterIP
 
-# 옵션: 모니터링 / 로깅
+# ========================
+# 모니터링
+# ========================
 monitoring:
-  enabled: false
+  enabled: true
   prometheus:
-    image: prom/prometheus
+    image:
+      repository: prom/prometheus
+      tag: latest
     port: 9090
-
-logging:
-  enabled: false
-  loki:
-    image: grafana/loki
-    port: 3100
+    service:
+      type: NodePort
+      nodePort: 30900
+  grafana:
+    enabled: true
+    service:
+      type: NodePort
+      nodePort: 30901
