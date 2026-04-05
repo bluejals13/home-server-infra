@@ -1,15 +1,38 @@
+---
 - hosts: localhost
+  gather_facts: false
   vars:
-    state: present        # present / absent
-    replicas: 1           # backend replica 수
+    state: present                    # present: 배포 / absent: 삭제
+    replicas: 1                       # backend replica 수
+    platform_namespace: default       # 설치/삭제할 네임스페이스
+    release_name: my-platform         # Helm 릴리즈 이름
+    chart_path: ../helm/my-platform   # Helm 차트 경로
 
   tasks:
-    - name: Deploy platform
+    # 1. Namespace 생성 (kubectl)
+    - name: Ensure namespace exists
       shell: |
-        helm upgrade --install my-platform ../helm/my-platform \
+        kubectl create namespace {{ platform_namespace }} --dry-run=client -o yaml | kubectl apply -f -
+      when: state == "present"
+
+    # 2. Helm 배포 (upgrade/install)
+    - name: Deploy platform
+      shell: >
+        helm upgrade --install {{ release_name }} {{ chart_path }}
+        --namespace {{ platform_namespace }}
         --set backend.replicaCount={{ replicas }} --wait
       when: state == "present"
 
-    - name: Remove platform
-      shell: helm uninstall my-platform
+    # 3. Helm release 존재 여부 확인 (삭제 준비)
+    - name: Check if Helm release exists
+      shell: helm status {{ release_name }} -n {{ platform_namespace }}
+      register: helm_status
+      ignore_errors: true
       when: state == "absent"
+
+    # 4. Helm release 삭제
+    - name: Remove platform if exists
+      shell: helm uninstall {{ release_name }} -n {{ platform_namespace }}
+      when:
+        - state == "absent"
+        - helm_status.rc == 0
