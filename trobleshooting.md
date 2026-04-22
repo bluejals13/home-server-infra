@@ -138,8 +138,7 @@ OOM 발생
 ---
 # 📈 7️⃣ 최종 정리
 
-## "해당 장애는 CPU 과부하를 시작점으로 DB latency 증가, network timeout, retry traffic 증가가 
-## 연쇄적으로 발생하면서 OOM까지 확장된 리소스 cascade failure "
+### "해당 장애는 CPU 과부하를 시작점으로 DB latency 증가, network timeout, retry traffic 증가가 연쇄적으로 발생하면서 OOM까지 확장된 리소스 cascade failure "
 ---
 - 1. 단일 장애 X
 - 2. 리소스 간 전이 O
